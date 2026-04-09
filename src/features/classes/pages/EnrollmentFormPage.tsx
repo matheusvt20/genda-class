@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { createClassLead, getPublicClassBySlug, type PublicClassData } from "@/features/classes/services/public-sales.service";
+import { trackPageView } from "@/lib/pixel";
 
 const sourceOptions = [
   "Instagram",
@@ -28,6 +29,10 @@ export function EnrollmentFormPage() {
     instagram: "",
     source: sourceOptions[0],
   });
+
+  useEffect(() => {
+    trackPageView();
+  }, []);
 
   useEffect(() => {
     if (!slug) {

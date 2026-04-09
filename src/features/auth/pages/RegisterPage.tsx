@@ -4,6 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { emailValido } from "@/lib/validation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { trackCompleteRegistration } from "@/lib/pixel";
 
 function formatarTelefoneBrasileiro(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -154,6 +155,8 @@ export function RegisterPage() {
         email,
         senha: password,
       });
+
+      trackCompleteRegistration();
 
       if (resultado.session) {
         navigate("/dashboard", { replace: true });

@@ -8,6 +8,7 @@ import {
   type DepositPageData,
 } from "@/features/classes/services/public-sales.service";
 import { formatarMoeda } from "@/lib/currency";
+import { trackPageView } from "@/lib/pixel";
 import { useParams } from "react-router-dom";
 
 function onlyDigits(value: string) {
@@ -30,6 +31,10 @@ export function DepositPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    trackPageView();
+  }, []);
 
   useEffect(() => {
     if (!slug) {

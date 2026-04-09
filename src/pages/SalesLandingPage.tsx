@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { trackPageView } from "@/lib/pixel";
 
 const depoimentos = [
   {
@@ -132,6 +133,10 @@ export function SalesLandingPage() {
     return () => {
       document.title = previousTitle;
     };
+  }, []);
+
+  useEffect(() => {
+    trackPageView();
   }, []);
 
   useEffect(() => {

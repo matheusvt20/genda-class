@@ -11,6 +11,7 @@ import { classStatusLabels, listClasses, type ClassListItem } from "@/features/c
 import { getDashboardData, type DashboardData } from "@/features/dashboard/services/dashboard.service";
 import { formatarMoeda } from "@/lib/currency";
 import { extrairHora, formatarData } from "@/lib/date";
+import { trackLead } from "@/lib/pixel";
 
 type DashboardLeadRow = {
   id: string;
@@ -200,6 +201,15 @@ export function DashboardPage() {
   useEffect(() => {
     void loadDashboard();
   }, [workspace?.id]);
+
+  useEffect(() => {
+    const pixelLeadFired = localStorage.getItem("pixel_lead_fired");
+
+    if (!pixelLeadFired) {
+      trackLead();
+      localStorage.setItem("pixel_lead_fired", "true");
+    }
+  }, []);
 
   const currentDateLabel = useMemo(() => {
     return capitalize(
