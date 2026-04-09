@@ -76,6 +76,18 @@ type WorkspacePaymentSettings = {
   pix_holder_name: string | null;
 };
 
+function getDefaultWorkspacePaymentSettings(): WorkspacePaymentSettings {
+  return {
+    school_name: null,
+    school_phone: null,
+    school_instagram: null,
+    whatsapp_number: null,
+    pix_key_type: null,
+    pix_key: null,
+    pix_holder_name: null,
+  };
+}
+
 export type PublicClassData = ClassPublicSettings & {
   occupied_seats: number;
   available_seats: number;
@@ -442,7 +454,7 @@ export async function getDepositPageData(slug: string): Promise<DepositPageData 
     .from("workspace_settings")
     .select("school_name, school_phone, school_instagram, whatsapp_number, pix_key_type, pix_key, pix_holder_name")
     .eq("workspace_id", classData.workspace_id)
-    .single<WorkspacePaymentSettings>();
+    .maybeSingle<WorkspacePaymentSettings>();
 
   if (settingsResponse.error) {
     throw settingsResponse.error;
@@ -450,6 +462,6 @@ export async function getDepositPageData(slug: string): Promise<DepositPageData 
 
   return {
     ...classData,
-    workspace_settings: settingsResponse.data,
+    workspace_settings: settingsResponse.data ?? getDefaultWorkspacePaymentSettings(),
   };
 }

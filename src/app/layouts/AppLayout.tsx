@@ -77,8 +77,8 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
-      <div className="flex min-h-screen">
+    <div className="min-h-screen overflow-x-hidden bg-slate-100 text-slate-900">
+      <div className="flex min-h-screen max-w-full overflow-x-hidden">
         <aside
           className={cn(
             "fixed inset-y-0 left-0 z-40 w-72 border-r border-slate-200 bg-white px-5 py-6 shadow-soft transition-transform lg:static lg:translate-x-0",
@@ -134,33 +134,37 @@ export function AppLayout() {
           />
         ) : null}
 
-        <div className="flex flex-1 flex-col">
+        <div className="flex min-w-0 max-w-full flex-1 flex-col overflow-x-hidden">
           <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur sm:px-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+            <div className="flex items-start justify-between gap-3 sm:items-center sm:gap-4">
+              <div className="min-w-0 flex items-center gap-3">
                 <button
                   type="button"
-                  className="rounded-full border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 lg:hidden"
+                  className="shrink-0 rounded-full border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 lg:hidden"
                   onClick={() => setMenuAberto(true)}
                   aria-label="Abrir menu"
                 >
                   <Menu className="size-5" />
                 </button>
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm text-slate-500">Bem-vinda de volta</p>
-                  <h1 className="text-base font-semibold text-slate-900">{nomeUsuario}</h1>
+                  <h1 className="truncate text-base font-semibold text-slate-900">{nomeUsuario}</h1>
                   <div className="mt-1 lg:hidden">{renderUsageIndicators()}</div>
                 </div>
               </div>
 
-              <Button variante="secundaria" className="gap-2" onClick={() => void sair()}>
+              <Button
+                variante="secundaria"
+                className="shrink-0 gap-2 px-3 sm:px-4"
+                onClick={() => void sair()}
+              >
                 <LogOut className="size-4" />
-                Sair
+                <span className="hidden sm:inline">Sair</span>
               </Button>
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-6 sm:px-6">
+          <main className="flex-1 w-full max-w-full overflow-x-hidden px-4 py-6 sm:px-6">
             <Outlet />
           </main>
         </div>

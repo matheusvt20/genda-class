@@ -44,6 +44,7 @@ const legendItems = [
   { label: "Workshop", color: "#E5780A" },
   { label: "Formação de instrutora", color: "#059669" },
 ];
+const MOBILE_BREAKPOINT_QUERY = "(max-width: 767px)";
 
 const valoresPadrao: ClassFormValues = {
   title: "",
@@ -215,6 +216,82 @@ function getTurmaCountLabel(total: number) {
   return total === 1 ? "1 turma" : `${total} turmas`;
 }
 
+function getAulasCountLabel(total: number) {
+  if (total === 0) {
+    return "Sem aulas";
+  }
+
+  return total === 1 ? "1 aula" : `${total} aulas`;
+}
+
+function formatWeekdayFull(date: Date) {
+  const weekday = date.toLocaleDateString("pt-BR", { weekday: "long" });
+  return weekday.charAt(0).toUpperCase() + weekday.slice(1);
+}
+
+function getDurationLabel(item: ClassListItem) {
+  const { startMinutes, endMinutes } = getDailyMinutes(item);
+  const totalMinutes = Math.max(0, endMinutes - startMinutes);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (minutes === 0) {
+    return `${hours}h`;
+  }
+
+  if (hours === 0) {
+    return `${minutes}min`;
+  }
+
+  return `${hours}h${String(minutes).padStart(2, "0")}`;
+}
+
+function getMobileStatusPresentation(status: ClassListItem["statusExibicao"]) {
+  if (status === "cancelada") {
+    return {
+      label: "Cancelada",
+      backgroundColor: "#FEE2E2",
+      color: "#991B1B",
+    };
+  }
+
+  if (status === "rascunho") {
+    return {
+      label: "Aguardando confirmação",
+      backgroundColor: "#FEF9C3",
+      color: "#854D0E",
+    };
+  }
+
+  return {
+    label: "Confirmada",
+    backgroundColor: "#DCFCE7",
+    color: "#166534",
+  };
+}
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches : false,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
+    const updateIsMobile = () => setIsMobile(mediaQuery.matches);
+
+    updateIsMobile();
+    mediaQuery.addEventListener("change", updateIsMobile);
+
+    return () => mediaQuery.removeEventListener("change", updateIsMobile);
+  }, []);
+
+  return isMobile;
+}
+
 function getMetrics(classes: ClassListItem[]) {
   return {
     totalTurmas: classes.length,
@@ -222,6 +299,277 @@ function getMetrics(classes: ClassListItem[]) {
     recebido: classes.reduce((total, item) => total + item.totalRecebido, 0),
     projecao: classes.reduce((total, item) => total + item.totalEsperado, 0),
   };
+}
+
+function WeekGridView({
+  weekDays,
+  classesByDate,
+  today,
+  onOpenClass,
+}: {
+  weekDays: Date[];
+  classesByDate: Map<string, ClassListItem[]>;
+  today: Date;
+  onOpenClass: (classItem: ClassListItem) => void;
+}) {
+  return (
+    <>
+      <div className="overflow-x-auto">
+        <div className="w-full">
+          <div
+            className="grid border-b border-slate-200"
+            style={{ gridTemplateColumns: "104px repeat(7, minmax(0, 1fr))" }}
+          >
+            <div className="border-r border-slate-200 bg-white" />
+            {weekDays.map((day, index) => {
+              const dateKey = getDateKey(day);
+              const items = classesByDate.get(dateKey) ?? [];
+              const isToday = isSameDay(day, today);
+              const accentColor = isToday
+                ? "#2D4EF5"
+                : items.length > 0
+                  ? getCourseTypeColor(items[0].course_type)
+                  : "#6B7280";
+              const daySurface = isToday
+                ? "#EEF1FF"
+                : items.length > 0
+                  ? getCourseTypeTint(items[0].course_type)
+                  : "#FFFFFF";
+
+              return (
+                <div
+                  key={dateKey}
+                  className="border-r border-slate-200 px-4 py-4 text-center last:border-r-0"
+                  style={{ backgroundColor: daySurface }}
+                >
+                  <p className="text-[12px] font-medium uppercase leading-none" style={{ color: isToday ? "#2D4EF5" : "#6B7280" }}>
+                    {weekDayLabels[index]}
+                  </p>
+                  <p className="mt-2 text-[18px] font-semibold leading-none" style={{ color: isToday ? "#2D4EF5" : "#2F2F2F" }}>
+                    {day.toLocaleDateString("pt-BR", { day: "2-digit" })}
+                  </p>
+                  <p className="mt-2 text-[11px] leading-none" style={{ color: accentColor }}>
+                    {getTurmaCountLabel(items.length)}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div
+            className="grid"
+            style={{ gridTemplateColumns: "104px repeat(7, minmax(0, 1fr))" }}
+          >
+            <div className="border-r border-slate-200 bg-white">
+              <div className="relative" style={{ height: `${TOTAL_GRID_HEIGHT}px` }}>
+                {weekHours.map((hour, index) => (
+                  <div
+                    key={hour}
+                    className="absolute inset-x-0 border-t border-slate-200 px-4 pt-2 text-[12px] font-medium text-slate-500"
+                    style={{ top: `${index * HOUR_SLOT_HEIGHT}px` }}
+                  >
+                    {`${String(hour).padStart(2, "0")}:00`}
+                  </div>
+                ))}
+                <div className="absolute inset-x-0 border-t border-slate-200 px-4 pt-2 text-[12px] font-medium text-slate-500" style={{ top: `${TOTAL_GRID_HEIGHT}px` }}>
+                  22:00
+                </div>
+              </div>
+            </div>
+
+            {weekDays.map((day) => {
+              const dateKey = getDateKey(day);
+              const items = classesByDate.get(dateKey) ?? [];
+              const isToday = isSameDay(day, today);
+              const columnSurface = isToday
+                ? "#EEF1FF"
+                : items.length > 0
+                  ? getCourseTypeTint(items[0].course_type)
+                  : "#FFFFFF";
+
+              return (
+                <div
+                  key={dateKey}
+                  className="relative border-r border-slate-200 last:border-r-0"
+                  style={{ height: `${TOTAL_GRID_HEIGHT}px`, backgroundColor: columnSurface }}
+                >
+                  {weekHours.map((hour, index) => (
+                    <div
+                      key={`${dateKey}-${hour}`}
+                      className="absolute inset-x-0 border-t border-slate-200"
+                      style={{ top: `${index * HOUR_SLOT_HEIGHT}px` }}
+                    />
+                  ))}
+                  <div
+                    className="absolute inset-x-0 border-t border-slate-200"
+                    style={{ top: `${TOTAL_GRID_HEIGHT}px` }}
+                  />
+
+                  {items.map((item, index) => (
+                    <button
+                      key={`${dateKey}-${item.id}`}
+                      type="button"
+                      onClick={() => onOpenClass(item)}
+                      className="absolute overflow-hidden rounded-[16px] px-4 py-3 text-left text-white shadow-soft"
+                      style={{
+                        ...getWeeklyBlockStyle(item, index),
+                        backgroundColor: getCourseTypeColor(item.course_type),
+                      }}
+                    >
+                      <p className="line-clamp-2 text-[11px] font-bold leading-tight text-white">{item.title}</p>
+                      <p className="mt-1 text-[10px] leading-none text-white/85">
+                        {formatarHora(item.starts_at)} - {formatarHora(item.ends_at ?? item.starts_at)}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-10 gap-y-4 border-t border-slate-200 px-8 py-4">
+        {legendItems.map((item) => (
+          <div key={item.label} className="flex items-center gap-3 text-[14px] text-slate-700">
+            <span className="size-4 rounded-md" style={{ backgroundColor: item.color }} />
+            <span>{item.label}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function WeekListView({
+  weekDays,
+  classesByDate,
+  today,
+  onOpenClass,
+}: {
+  weekDays: Date[];
+  classesByDate: Map<string, ClassListItem[]>;
+  today: Date;
+  onOpenClass: (classItem: ClassListItem) => void;
+}) {
+  return (
+    <div className="space-y-4 bg-slate-50 p-3">
+      {weekDays.map((day, index) => {
+        const dateKey = getDateKey(day);
+        const items = classesByDate.get(dateKey) ?? [];
+        const isToday = isSameDay(day, today);
+
+        return (
+          <section
+            key={dateKey}
+            className="overflow-hidden rounded-[20px] border border-slate-200 bg-white"
+          >
+            <div className="flex items-start gap-3 border-b border-slate-100 px-4 py-4">
+              <div
+                className="flex size-14 shrink-0 flex-col items-center justify-center rounded-full text-center"
+                style={{
+                  backgroundColor: isToday ? "#2563EB" : "#EFF6FF",
+                  color: isToday ? "#FFFFFF" : "#1E3A8A",
+                }}
+              >
+                <span className="text-[18px] font-semibold leading-none">
+                  {day.toLocaleDateString("pt-BR", { day: "2-digit" })}
+                </span>
+                <span className="mt-1 text-[10px] font-bold uppercase leading-none">
+                  {weekDayLabels[index]}
+                </span>
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900">{formatWeekdayFull(day)}</p>
+                    <p className="mt-1 text-xs text-slate-500">{formatarData(day)}</p>
+                  </div>
+
+                  {items.length > 0 ? (
+                    <span className="inline-flex rounded-full bg-[#DBEAFE] px-3 py-1 text-xs font-semibold text-[#1D4ED8]">
+                      {getAulasCountLabel(items.length)}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-slate-400">Sem aulas</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {items.length === 0 ? (
+              <div className="px-4 py-5">
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute inset-x-0 border-t border-dashed border-slate-200" />
+                  <span className="relative bg-white px-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    livre
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 p-3">
+                {items.map((item) => {
+                  const statusPresentation = getMobileStatusPresentation(item.statusExibicao);
+                  const isCompleted = item.statusExibicao === "concluida";
+                  const title = item.course_name?.trim() || item.title;
+
+                  return (
+                    <button
+                      key={`${dateKey}-${item.id}`}
+                      type="button"
+                      onClick={() => onOpenClass(item)}
+                      className="w-full rounded-xl bg-white text-left"
+                      style={{
+                        border: isToday ? "1.5px solid #2563EB" : "1px solid #E2E8F0",
+                      }}
+                    >
+                      <div className="grid grid-cols-[72px_3px_minmax(0,1fr)] gap-3 px-3 py-3">
+                        <div className="flex flex-col justify-start">
+                          <p className="text-sm font-semibold leading-none text-slate-900">
+                            {formatarHora(item.starts_at)}
+                          </p>
+                          <p className="mt-1 text-xs leading-none text-slate-500">
+                            {getDurationLabel(item)}
+                          </p>
+                        </div>
+
+                        <div
+                          className="rounded-full"
+                          style={{ backgroundColor: isCompleted ? "#16A34A" : "#2563EB" }}
+                        />
+
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <h3 className="text-sm font-semibold leading-5 text-slate-900">{title}</h3>
+                              <p className="mt-1 text-xs text-slate-500">
+                                {item.vagasOcupadas} alunas · {getCourseTypeLabel(item.course_type)}
+                              </p>
+                            </div>
+
+                            <span
+                              className="inline-flex shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                              style={{
+                                backgroundColor: statusPresentation.backgroundColor,
+                                color: statusPresentation.color,
+                              }}
+                            >
+                              {statusPresentation.label}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
 }
 
 function Drawer({
@@ -323,6 +671,7 @@ function Drawer({
 
 export function CalendarPage() {
   const { workspace } = useAuth();
+  const isMobile = useIsMobile();
   const [classes, setClasses] = useState<ClassListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -502,74 +851,83 @@ export function CalendarPage() {
     ];
 
     return (
-      <div className="w-full overflow-hidden bg-[#2D4EF5] px-4 py-3 text-white box-border">
-        <div className="flex w-full flex-wrap items-center justify-between gap-2 overflow-hidden box-border">
-          <div className="min-w-0">
-            <p className="text-[14px] font-semibold uppercase tracking-[0.16em] text-white/75">
-              {getMonthLabel(referenceDate)}
-            </p>
-            <h2 className="mt-1 text-[18px] font-semibold leading-none text-white">Agenda de turmas</h2>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-2 overflow-hidden">
-            {metricItems.map(([label, value]) => (
-              <div key={label} className="whitespace-nowrap text-center">
-                <div className="whitespace-nowrap text-[13px] font-semibold leading-none text-white">
-                  {value}
-                </div>
-                <div className="mt-1 whitespace-nowrap text-[13px] font-medium lowercase leading-none text-white/75">
-                  {label}
-                </div>
+      <div className="overflow-hidden">
+        <div className="rounded-t-[16px] bg-[#2563EB] px-4 py-3 text-white sm:px-5 sm:py-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+              <div className="min-w-0">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-white/75 sm:text-[14px]">
+                  {getMonthLabel(referenceDate)}
+                </p>
+                <h2 className="mt-1 text-[18px] font-semibold leading-none text-white sm:text-[22px]">
+                  Agenda de turmas
+                </h2>
               </div>
-            ))}
+
+              {!isMobile ? (
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:flex sm:flex-wrap sm:justify-end sm:gap-3">
+                  {metricItems.map(([label, value]) => (
+                    <div key={label} className="min-w-0 rounded-2xl border border-white/15 bg-white/10 px-3 py-2 text-left sm:min-w-[104px] sm:text-center">
+                      <div className="truncate text-[13px] font-semibold leading-none text-white">{value}</div>
+                      <div className="mt-1 truncate text-[12px] font-medium lowercase leading-none text-white/75">
+                        {label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+              <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-center">
+                <button
+                  type="button"
+                  onClick={() => setReferenceDate((current) => addToReferenceDate(current, viewMode, -1))}
+                  className="inline-flex h-10 items-center justify-center rounded-2xl border border-white/25 bg-white/10 px-3 text-[13px] font-semibold text-white transition hover:bg-white/15"
+                >
+                  <ChevronLeft className="mr-1.5 size-4" />
+                  <span className="leading-none">Anterior</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReferenceDate(new Date())}
+                  className="inline-flex h-10 items-center justify-center rounded-2xl border border-white/25 bg-white/10 px-3 text-[13px] font-semibold text-white transition hover:bg-white/15"
+                >
+                  Hoje
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReferenceDate((current) => addToReferenceDate(current, viewMode, 1))}
+                  className="inline-flex h-10 items-center justify-center rounded-2xl border border-white/25 bg-white/10 px-3 text-[13px] font-semibold text-white transition hover:bg-white/15"
+                >
+                  <span className="leading-none">Próxima</span>
+                  <ChevronRight className="ml-1.5 size-4" />
+                </button>
+              </div>
+            </div>
           </div>
+        </div>
 
-          <div className="flex flex-wrap items-center justify-end gap-2 overflow-hidden">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setReferenceDate((current) => addToReferenceDate(current, viewMode, -1))}
-                className="inline-flex h-10 items-center justify-center rounded-2xl border border-white/25 bg-white/10 px-4 text-[13px] font-semibold text-white transition hover:bg-white/15"
-              >
-                <ChevronLeft className="mr-2 size-4" />
-                <span className="leading-none">Anterior</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setReferenceDate(new Date())}
-                className="inline-flex h-10 items-center justify-center rounded-2xl border border-white/25 bg-white/10 px-4 text-[13px] font-semibold text-white transition hover:bg-white/15"
-              >
-                Hoje
-              </button>
-              <button
-                type="button"
-                onClick={() => setReferenceDate((current) => addToReferenceDate(current, viewMode, 1))}
-                className="inline-flex h-10 items-center justify-center rounded-2xl border border-white/25 bg-white/10 px-4 text-[13px] font-semibold text-white transition hover:bg-white/15"
-              >
-                <span className="leading-none">Próximo</span>
-                <ChevronRight className="ml-2 size-4" />
-              </button>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {tabs.map((tab) => {
-                const active = tab.id === viewMode;
+        <div className="rounded-b-[16px] bg-[#1D4ED8] px-3 py-3 sm:px-4">
+          <div className="grid grid-cols-3 gap-2">
+            {tabs.map((tab) => {
+              const active = tab.id === viewMode;
 
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setViewMode(tab.id)}
-                    className={`inline-flex h-10 items-center justify-center rounded-2xl border px-4 text-[13px] font-semibold transition ${
-                      active
-                        ? "border-white bg-white text-brand-700"
-                        : "border-white/25 bg-white/10 text-white/75 hover:bg-white/15 hover:text-white"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setViewMode(tab.id)}
+                  className={`inline-flex h-10 items-center justify-center rounded-2xl border px-4 text-[13px] font-semibold transition ${
+                    active
+                      ? "border-white bg-white text-[#2563EB]"
+                      : "border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -577,132 +935,20 @@ export function CalendarPage() {
   }
 
   function renderWeeklyView() {
-    return (
-      <>
-        <div className="overflow-x-auto">
-          <div className="w-full">
-            <div
-              className="grid border-b border-slate-200"
-              style={{ gridTemplateColumns: "104px repeat(7, minmax(0, 1fr))" }}
-            >
-              <div className="border-r border-slate-200 bg-white" />
-              {weekDays.map((day, index) => {
-                const dateKey = getDateKey(day);
-                const items = classesByDate.get(dateKey) ?? [];
-                const isToday = isSameDay(day, today);
-                const accentColor = isToday
-                  ? "#2D4EF5"
-                  : items.length > 0
-                    ? getCourseTypeColor(items[0].course_type)
-                    : "#6B7280";
-                const daySurface = isToday
-                  ? "#EEF1FF"
-                  : items.length > 0
-                    ? getCourseTypeTint(items[0].course_type)
-                    : "#FFFFFF";
-
-                return (
-                  <div
-                    key={dateKey}
-                    className="border-r border-slate-200 px-4 py-4 text-center last:border-r-0"
-                    style={{ backgroundColor: daySurface }}
-                  >
-                    <p className="text-[12px] font-medium uppercase leading-none" style={{ color: isToday ? "#2D4EF5" : "#6B7280" }}>
-                      {weekDayLabels[index]}
-                    </p>
-                    <p className="mt-2 text-[18px] font-semibold leading-none" style={{ color: isToday ? "#2D4EF5" : "#2F2F2F" }}>
-                      {day.toLocaleDateString("pt-BR", { day: "2-digit" })}
-                    </p>
-                    <p className="mt-2 text-[11px] leading-none" style={{ color: accentColor }}>
-                      {getTurmaCountLabel(items.length)}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div
-              className="grid"
-              style={{ gridTemplateColumns: "104px repeat(7, minmax(0, 1fr))" }}
-            >
-              <div className="border-r border-slate-200 bg-white">
-                <div className="relative" style={{ height: `${TOTAL_GRID_HEIGHT}px` }}>
-                  {weekHours.map((hour, index) => (
-                    <div
-                      key={hour}
-                      className="absolute inset-x-0 border-t border-slate-200 px-4 pt-2 text-[12px] font-medium text-slate-500"
-                      style={{ top: `${index * HOUR_SLOT_HEIGHT}px` }}
-                    >
-                      {`${String(hour).padStart(2, "0")}:00`}
-                    </div>
-                  ))}
-                  <div className="absolute inset-x-0 border-t border-slate-200 px-4 pt-2 text-[12px] font-medium text-slate-500" style={{ top: `${TOTAL_GRID_HEIGHT}px` }}>
-                    22:00
-                  </div>
-                </div>
-              </div>
-
-              {weekDays.map((day) => {
-                const dateKey = getDateKey(day);
-                const items = classesByDate.get(dateKey) ?? [];
-                const isToday = isSameDay(day, today);
-                const columnSurface = isToday
-                  ? "#EEF1FF"
-                  : items.length > 0
-                    ? getCourseTypeTint(items[0].course_type)
-                    : "#FFFFFF";
-
-                return (
-                  <div
-                    key={dateKey}
-                    className="relative border-r border-slate-200 last:border-r-0"
-                    style={{ height: `${TOTAL_GRID_HEIGHT}px`, backgroundColor: columnSurface }}
-                  >
-                    {weekHours.map((hour, index) => (
-                      <div
-                        key={`${dateKey}-${hour}`}
-                        className="absolute inset-x-0 border-t border-slate-200"
-                        style={{ top: `${index * HOUR_SLOT_HEIGHT}px` }}
-                      />
-                    ))}
-                    <div
-                      className="absolute inset-x-0 border-t border-slate-200"
-                      style={{ top: `${TOTAL_GRID_HEIGHT}px` }}
-                    />
-
-                    {items.map((item, index) => (
-                      <button
-                        key={`${dateKey}-${item.id}`}
-                        type="button"
-                        onClick={() => setDrawerState({ type: "class", classItem: item })}
-                        className="absolute overflow-hidden rounded-[16px] px-4 py-3 text-left text-white shadow-soft"
-                        style={{
-                          ...getWeeklyBlockStyle(item, index),
-                          backgroundColor: getCourseTypeColor(item.course_type),
-                        }}
-                      >
-                        <p className="line-clamp-2 text-[11px] font-bold leading-tight text-white">{item.title}</p>
-                        <p className="mt-1 text-[10px] leading-none text-white/85">
-                          {formatarHora(item.starts_at)} - {formatarHora(item.ends_at ?? item.starts_at)}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-x-10 gap-y-4 border-t border-slate-200 px-8 py-4">
-          {legendItems.map((item) => (
-            <div key={item.label} className="flex items-center gap-3 text-[14px] text-slate-700">
-              <span className="size-4 rounded-md" style={{ backgroundColor: item.color }} />
-              <span>{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </>
+    return isMobile ? (
+      <WeekListView
+        weekDays={weekDays}
+        classesByDate={classesByDate}
+        today={today}
+        onOpenClass={(classItem) => setDrawerState({ type: "class", classItem })}
+      />
+    ) : (
+      <WeekGridView
+        weekDays={weekDays}
+        classesByDate={classesByDate}
+        today={today}
+        onOpenClass={(classItem) => setDrawerState({ type: "class", classItem })}
+      />
     );
   }
 
@@ -872,13 +1118,15 @@ export function CalendarPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button className="gap-2" onClick={() => setDialogOpen(true)}>
-          <Plus className="size-4" />
-          Nova turma
-        </Button>
-      </div>
+    <div className="space-y-3 sm:space-y-4">
+      {!isMobile ? (
+        <div className="flex justify-end">
+          <Button className="gap-2" onClick={() => setDialogOpen(true)}>
+            <Plus className="size-4" />
+            Nova turma
+          </Button>
+        </div>
+      ) : null}
 
       <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-soft">
         {renderHeader()}
@@ -886,6 +1134,16 @@ export function CalendarPage() {
         {viewMode === "mes" ? renderMonthlyView() : null}
         {viewMode === "dia" ? renderDailyView() : null}
       </div>
+
+      {isMobile ? (
+        <Button
+          className="fixed bottom-5 right-4 z-30 h-14 min-h-14 w-14 min-w-14 rounded-full bg-[#2563EB] p-0 text-white shadow-lg hover:bg-[#1D4ED8]"
+          onClick={() => setDialogOpen(true)}
+          aria-label="Nova turma"
+        >
+          <Plus className="size-5" />
+        </Button>
+      ) : null}
 
       <Drawer
         state={drawerState}

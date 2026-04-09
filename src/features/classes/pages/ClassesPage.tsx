@@ -225,14 +225,19 @@ export function ClassesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-full space-y-6 overflow-x-hidden">
       <div className="flex flex-col gap-4 rounded-[28px] bg-white p-5 shadow-soft sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-semibold text-brand-600">Turmas</p>
-          <h2 className="text-3xl font-semibold text-slate-900">Gestão de turmas</h2>
-          <p className="mt-2 text-sm text-slate-500">Acompanhe vagas, recebimentos e status das próximas aulas.</p>
+          <h2 className="text-[2rem] font-semibold leading-tight text-slate-900 sm:text-3xl">Gestão de turmas</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            Acompanhe vagas, recebimentos e status das próximas aulas.
+          </p>
         </div>
-        <Button className="gap-2 whitespace-nowrap self-start sm:self-auto" onClick={() => void handleOpenNewClassDialog()}>
+        <Button
+          className="gap-2 whitespace-nowrap self-start sm:self-auto"
+          onClick={() => void handleOpenNewClassDialog()}
+        >
           <Plus className="size-4" />
           Nova turma
           {classLimitReached ? (

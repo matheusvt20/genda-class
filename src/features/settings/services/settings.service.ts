@@ -32,6 +32,35 @@ type WorkspaceRecord = {
   name: string;
 };
 
+function getDefaultWorkspaceSettings(workspaceId: string): WorkspaceSettings {
+  const now = new Date().toISOString();
+
+  return {
+    workspace_id: workspaceId,
+    school_name: null,
+    school_phone: null,
+    school_instagram: null,
+    whatsapp_number: null,
+    pix_key_type: null,
+    pix_key: null,
+    pix_holder_name: null,
+    currency: "BRL",
+    timezone: "America/Sao_Paulo",
+    default_class_capacity: 10,
+    default_deposit_percentage: null,
+    created_at: now,
+    updated_at: now,
+  };
+}
+
+async function ensureWorkspaceSettings(workspaceId: string) {
+  const response = await supabase.from("workspace_settings").upsert({ workspace_id: workspaceId }, { onConflict: "workspace_id" });
+
+  if (response.error) {
+    throw response.error;
+  }
+}
+
 async function getCurrentWorkspace() {
   const {
     data: { session },
@@ -62,29 +91,44 @@ async function getCurrentWorkspace() {
 export async function getWorkspaceSettings(): Promise<WorkspaceSettingsData> {
   const workspace = await getCurrentWorkspace();
 
-  const settingsResponse = await supabase
+  let settingsResponse = await supabase
     .from("workspace_settings")
     .select("*")
     .eq("workspace_id", workspace.id)
-    .single<WorkspaceSettings>();
+    .maybeSingle<WorkspaceSettings>();
 
   if (settingsResponse.error) {
     throw settingsResponse.error;
   }
 
+  if (!settingsResponse.data) {
+    await ensureWorkspaceSettings(workspace.id);
+
+    settingsResponse = await supabase
+      .from("workspace_settings")
+      .select("*")
+      .eq("workspace_id", workspace.id)
+      .maybeSingle<WorkspaceSettings>();
+
+    if (settingsResponse.error) {
+      throw settingsResponse.error;
+    }
+  }
+
   return {
     workspace,
-    settings: settingsResponse.data,
+    settings: settingsResponse.data ?? getDefaultWorkspaceSettings(workspace.id),
   };
 }
 
 export async function updateWorkspaceSettings(data: Partial<WorkspaceSettings>) {
   const workspace = await getCurrentWorkspace();
 
+  await ensureWorkspaceSettings(workspace.id);
+
   const response = await supabase
     .from("workspace_settings")
-    .update(data)
-    .eq("workspace_id", workspace.id)
+    .upsert({ ...data, workspace_id: workspace.id }, { onConflict: "workspace_id" })
     .select("*")
     .single<WorkspaceSettings>();
 
