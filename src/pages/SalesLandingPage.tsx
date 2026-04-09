@@ -276,6 +276,39 @@ export function SalesLandingPage() {
                 </p>
               </div>
 
+              <div className="relative md:hidden">
+                <img
+                  src="/images/camila-perpetuo.png"
+                  alt="Camila Perpetuo, Lash Designer"
+                  loading="lazy"
+                  className="h-[420px] w-full rounded-[24px] object-cover shadow-2xl sm:h-[520px]"
+                />
+                <div
+                  className="pointer-events-none absolute inset-0 rounded-[24px]"
+                  style={{ background: "linear-gradient(to top, rgba(0,0,0,0.80) 0%, transparent 55%)" }}
+                />
+                <div className="absolute right-5 top-5 rounded-full bg-white px-4 py-2 text-[12px] font-bold text-slate-900 shadow-lg">
+                  Turmas organizadas ✓
+                </div>
+                <div className="absolute bottom-5 left-5 right-5 flex max-w-md flex-col gap-3">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-[#2D4EF5] px-3 py-1 text-[11px] font-semibold text-white">
+                      Lash Designer
+                    </span>
+                    <span className="rounded-full border border-white/70 px-3 py-1 text-[11px] font-semibold text-white">
+                      Cursos presenciais
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-[20px] font-bold text-white">Camila Perpetuo</p>
+                    <p className="text-[13px] text-slate-200">Lash Designer</p>
+                  </div>
+                  <p className="border-l-2 border-white pl-3 text-[13px] italic leading-6 text-white">
+                    Antes eu controlava tudo no WhatsApp. Hoje sei exatamente quanto lucrei em cada turma.
+                  </p>
+                </div>
+              </div>
+
               <div className="flex flex-col gap-3 sm:flex-row">
                 <CtaButton>Quero organizar minhas turmas →</CtaButton>
                 <a
@@ -310,7 +343,7 @@ export function SalesLandingPage() {
               </div>
             </div>
 
-            <div className="relative order-first lg:order-none">
+            <div className="relative order-first hidden md:block lg:order-none">
               <img
                 src="/images/camila-perpetuo.png"
                 alt="Camila Perpetuo, Lash Designer"
