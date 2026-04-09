@@ -45,42 +45,42 @@ const nichos = [
     titulo: "Cursos VIP",
     descricao:
       "Atendimento individual ou em pequenos grupos premium. Controle cada detalhe do pagamento e entregue uma experiência profissional.",
-    imagem: "/images/cursos-vip.png",
+    imagem: "/images/optimized/cursos-vip.jpg",
     bullets: ["Turma de 1 a 3 alunas", "Preço premium por aluna", "Certificado personalizado"],
   },
   {
     titulo: "Formação de Instrutora",
     descricao:
       "Cursos completos para formar profissionais. Gerencie turmas maiores, kits de materiais e emita certificados com carga horária.",
-    imagem: "/images/camila-perpetuo.png",
+    imagem: "/images/optimized/camila-perpetuo.jpg",
     bullets: ["Controle de kit por aluna", "Certificado com carga horária", "Histórico completo da turma"],
   },
   {
     titulo: "Workshops",
     descricao:
       "Eventos de curta duração onde a aluna assiste e aprende. Organize inscrições, controle presença e divulgue com página profissional.",
-    imagem: "/images/workshops.png",
+    imagem: "/images/optimized/workshops.jpg",
     bullets: ["Inscrição pela página pública", "QR Code de presença", "Resultado financeiro do evento"],
   },
   {
     titulo: "Formações Técnicas",
     descricao:
       "Cursos práticos de 1 ou mais dias com materiais inclusos. Calcule o custo real, defina o preço certo e saiba o lucro antes de abrir.",
-    imagem: "/images/tati-lash-designer-2.png",
+    imagem: "/images/optimized/tati-lash-designer-2.jpg",
     bullets: ["Cálculo de custo por aluna", "Ponto de equilíbrio da turma", "Duplicar turma com 1 clique"],
   },
   {
     titulo: "Eventos Presenciais",
     descricao:
       "Palestras, encontros e imersões presenciais. Controle as inscrições, gerencie pagamentos e tenha uma visão financeira completa do evento.",
-    imagem: "/images/eventos-presenciais.png",
+    imagem: "/images/optimized/eventos-presenciais.jpg",
     bullets: ["Página de vendas do evento", "Controle de vagas em tempo real", "Lista de presença por QR Code"],
   },
   {
     titulo: "Cursos Recorrentes",
     descricao:
       "Você dá o mesmo curso toda semana ou quinzena. Duplique a turma anterior com 1 clique e comece já com toda a estrutura pronta.",
-    imagem: "/images/cursos-recorrentes.png",
+    imagem: "/images/optimized/cursos-recorrentes.jpg",
     bullets: ["Duplicar turma com 1 clique", "Histórico de todas as edições", "Comparativo de resultado por turma"],
   },
 ] as const;
@@ -95,6 +95,9 @@ const beneficios = [
 ] as const;
 
 const ctaHref = "/cadastro";
+const heroImageSrc = "/images/optimized/camila-perpetuo.jpg";
+const missionImageSrc = "/images/optimized/tati-lash-designer-2.jpg";
+const dashboardHeroImageSrc = "/images/optimized/genda-dashboard-hero.jpg";
 
 function CtaButton({ secondary = false, children, href = ctaHref }: { secondary?: boolean; children: string; href?: string }) {
   return (
@@ -283,9 +286,11 @@ export function SalesLandingPage() {
 
               <div className="relative md:hidden">
                 <img
-                  src="/images/camila-perpetuo.png"
+                  src={heroImageSrc}
                   alt="Camila Perpetuo, Lash Designer"
-                  loading="lazy"
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                   className="h-[420px] w-full rounded-[24px] object-cover shadow-2xl sm:h-[520px]"
                 />
                 <div
@@ -332,6 +337,7 @@ export function SalesLandingPage() {
                       src={item.foto}
                       alt={item.nome}
                       loading="lazy"
+                      decoding="async"
                       className="size-11 rounded-full border-2 border-white object-cover"
                     />
                   ))}
@@ -350,9 +356,11 @@ export function SalesLandingPage() {
 
             <div className="relative order-first hidden md:block lg:order-none">
               <img
-                src="/images/camila-perpetuo.png"
+                src={heroImageSrc}
                 alt="Camila Perpetuo, Lash Designer"
-                loading="lazy"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
                 className="h-[420px] w-full rounded-[24px] object-cover shadow-2xl sm:h-[520px]"
               />
               <div
@@ -412,7 +420,7 @@ export function SalesLandingPage() {
                 className="w-[320px] shrink-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
               >
                 <div className="flex items-center gap-3">
-                  <img src={item.foto} alt={item.nome} loading="lazy" className="size-12 rounded-full object-cover" />
+                  <img src={item.foto} alt={item.nome} loading="lazy" decoding="async" className="size-12 rounded-full object-cover" />
                   <div>
                     <p className="font-semibold text-slate-900">{item.nome}</p>
                     <p className="text-sm text-slate-500">{item.profissao}</p>
@@ -498,7 +506,7 @@ export function SalesLandingPage() {
                       style={{ flexBasis: nichosDesktop ? "calc((100% - 48px) / 3)" : "100%" }}
                     >
                       <div className="relative overflow-hidden rounded-xl">
-                        <img src={item.imagem} alt={item.titulo} loading="lazy" className="h-56 w-full object-cover" />
+                        <img src={item.imagem} alt={item.titulo} loading="lazy" decoding="async" className="h-56 w-full object-cover" />
                         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                         <span className="absolute bottom-3 left-3 rounded-full bg-[#2D4EF5] px-3 py-1 text-[11px] font-semibold text-white shadow-lg">
                           {item.titulo}
@@ -668,9 +676,10 @@ export function SalesLandingPage() {
               <CtaButton>Quero organizar minhas turmas →</CtaButton>
             </div>
             <img
-              src="/images/tati-lash-designer-2.png"
+              src={missionImageSrc}
               alt="Profissional da beleza"
               loading="lazy"
+              decoding="async"
               className="h-[420px] w-full rounded-[24px] object-cover shadow-xl"
             />
           </div>
@@ -687,7 +696,7 @@ export function SalesLandingPage() {
               {depoimentos.map((item) => (
                 <article key={item.nome} className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex items-center gap-4">
-                    <img src={item.foto} alt={item.nome} loading="lazy" className="size-14 rounded-full object-cover" />
+                    <img src={item.foto} alt={item.nome} loading="lazy" decoding="async" className="size-14 rounded-full object-cover" />
                     <div>
                       <p className="font-semibold text-slate-900">{item.nome}</p>
                       <p className="text-sm text-slate-500">{item.profissao}</p>
@@ -704,9 +713,10 @@ export function SalesLandingPage() {
         <section className="px-4 py-16 sm:px-6 lg:px-8">
           <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-2">
             <img
-              src="/images/genda-dashboard-hero.png"
+              src={dashboardHeroImageSrc}
               alt="Curso da beleza"
               loading="lazy"
+              decoding="async"
               className="h-[420px] w-full rounded-[24px] object-cover shadow-xl"
             />
             <div className="flex items-center">

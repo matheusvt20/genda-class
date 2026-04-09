@@ -167,7 +167,16 @@ export function SalesPage() {
       setError(null);
 
       try {
-        const response = await getPublicClassBySlug(slug);
+        const [response, extrasResponse] = await Promise.all([
+          getPublicClassBySlug(slug),
+          supabase
+            .from("classes")
+            .select(
+              "teacher_photo_url, sales_video_url, sales_gallery, sales_testimonials, teacher_name, teacher_bio",
+            )
+            .eq("slug", slug)
+            .maybeSingle<SalesPageExtras>(),
+        ]);
 
         if (!active) {
           return;
@@ -180,20 +189,11 @@ export function SalesPage() {
           return;
         }
 
-        const [extrasResponse, workspaceResponse] = await Promise.all([
-          supabase
-            .from("classes")
-            .select(
-              "teacher_photo_url, sales_video_url, sales_gallery, sales_testimonials, teacher_name, teacher_bio",
-            )
-            .eq("id", response.id)
-            .maybeSingle<SalesPageExtras>(),
-          supabase
-            .from("workspace_settings")
-            .select("school_name, whatsapp_number")
-            .eq("workspace_id", response.workspace_id)
-            .maybeSingle<WorkspacePublicInfo>(),
-        ]);
+        const workspaceResponse = await supabase
+          .from("workspace_settings")
+          .select("school_name, whatsapp_number")
+          .eq("workspace_id", response.workspace_id)
+          .maybeSingle<WorkspacePublicInfo>();
 
         if (!active) {
           return;
@@ -350,7 +350,13 @@ export function SalesPage() {
             <div className="order-1 lg:order-2">
               <div className="h-[320px] overflow-hidden rounded-[12px] bg-white/10 sm:h-[420px] lg:h-full">
                 {teacherPhotoUrl ? (
-                  <img src={teacherPhotoUrl} alt={extras?.teacher_name || data.title} className="h-full w-full object-cover" />
+                  <img
+                    src={teacherPhotoUrl}
+                    alt={extras?.teacher_name || data.title}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
                   <div className="flex h-full items-center justify-center bg-white/5 px-8 text-center text-sm text-white/70">
                     Foto da professora em breve
@@ -433,7 +439,13 @@ export function SalesPage() {
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {galleryImages.map((imageUrl, index) => (
                 <div key={`${imageUrl}-${index}`} className="overflow-hidden rounded-[8px] bg-slate-100" style={{ aspectRatio: "1 / 1" }}>
-                  <img src={imageUrl} alt={`Resultado ${index + 1}`} className="h-full w-full object-cover" />
+                  <img
+                    src={imageUrl}
+                    alt={`Resultado ${index + 1}`}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
                 </div>
               ))}
             </div>
@@ -450,7 +462,13 @@ export function SalesPage() {
                 <div key={`${item.name}-${item.text}`} className="rounded-[16px] bg-white p-5 shadow-sm">
                   <div className="flex items-center gap-3">
                     {item.photoUrl ? (
-                      <img src={item.photoUrl} alt={item.name} className="size-12 rounded-full object-cover" />
+                      <img
+                        src={item.photoUrl}
+                        alt={item.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="size-12 rounded-full object-cover"
+                      />
                     ) : (
                       <div className="flex size-12 items-center justify-center rounded-full bg-[#EEF1FF] text-sm font-bold text-[#2D4EF5]">
                         {item.name.slice(0, 1).toUpperCase()}

@@ -411,12 +411,6 @@ export async function getPublicClassBySlug(slug: string): Promise<PublicClassDat
 }
 
 export async function createClassLead(slug: string, values: CreateLeadValues) {
-  const classData = await getPublicClassBySlug(slug);
-
-  if (!classData) {
-    throw new Error("Turma pública não encontrada.");
-  }
-
   const response = await supabase
     .rpc("create_public_class_lead", {
       p_class_slug: slug,
@@ -439,7 +433,8 @@ export async function createClassLead(slug: string, values: CreateLeadValues) {
 
   return {
     leadId: createdLead.id,
-    classData,
+    workspaceId: createdLead.workspace_id,
+    classId: createdLead.class_id,
   };
 }
 
