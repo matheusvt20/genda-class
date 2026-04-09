@@ -17,6 +17,12 @@ export type Workspace = {
   updated_at: string;
 };
 
+export type ResultadoAutenticacao = {
+  session: Session | null;
+  user: User | null;
+  precisaConfirmarEmail: boolean;
+};
+
 export type UsuarioAutenticado = {
   user: User | null;
   session: Session | null;
@@ -24,12 +30,13 @@ export type UsuarioAutenticado = {
   workspace: Workspace | null;
   carregando: boolean;
   erro: string | null;
-  entrar: (email: string, senha: string) => Promise<void>;
+  entrar: (email: string, senha: string) => Promise<ResultadoAutenticacao>;
   cadastrar: (dados: {
     nomeCompleto: string;
+    phone: string;
     email: string;
     senha: string;
-  }) => Promise<void>;
+  }) => Promise<ResultadoAutenticacao>;
   recuperarSenha: (email: string) => Promise<void>;
   sair: () => Promise<void>;
   limparErro: () => void;

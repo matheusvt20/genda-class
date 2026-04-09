@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FormActions } from "@/components/forms/FormActions";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -7,13 +7,23 @@ import { Input } from "@/components/ui/Input";
 import { emailValido } from "@/lib/validation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
+type EstadoDaTelaDeLogin = {
+  cadastroPendente?: boolean;
+  email?: string;
+};
+
 export function LoginForm() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { entrar, erro, limparErro } = useAuth();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [erros, setErros] = useState<{ email?: string; senha?: string }>({});
+  const estado = location.state as EstadoDaTelaDeLogin | null;
+  const mensagemCadastro = estado?.cadastroPendente
+    ? `Conta criada com sucesso${estado.email ? ` para ${estado.email}` : ""}. Confirme o email antes de entrar.`
+    : null;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,8 +42,13 @@ export function LoginForm() {
 
     try {
       setCarregando(true);
-      await entrar(email, senha);
-      navigate("/dashboard", { replace: true });
+      const resultado = await entrar(email, senha);
+
+      if (resultado.session) {
+        navigate("/dashboard", { replace: true });
+      }
+    } catch {
+      return;
     } finally {
       setCarregando(false);
     }
@@ -46,6 +61,12 @@ export function LoginForm() {
         <h1 className="text-3xl font-semibold text-slate-900">Entrar no Genda Class</h1>
         <p className="text-sm text-slate-500">Use seu email e senha para acessar o painel.</p>
       </div>
+
+      {mensagemCadastro ? (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {mensagemCadastro}
+        </div>
+      ) : null}
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <Input

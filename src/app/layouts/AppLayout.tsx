@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { LayoutDashboard, GraduationCap, Users, Wallet, Settings, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, CalendarDays, GraduationCap, Users, Wallet, Settings, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/core/utils";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { getActiveClassCount } from "@/features/classes/services/classes.service";
+import { getStudentCount } from "@/features/students/services/students.service";
 
 const itensMenu = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/calendario", label: "Calendário", icon: CalendarDays },
   { to: "/turmas", label: "Turmas", icon: GraduationCap },
   { to: "/alunas", label: "Alunas", icon: Users },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
@@ -14,10 +17,64 @@ const itensMenu = [
 ];
 
 export function AppLayout() {
-  const { perfil, sair } = useAuth();
+  const { perfil, sair, user, workspace } = useAuth();
   const [menuAberto, setMenuAberto] = useState(false);
+  const [activeClassesCount, setActiveClassesCount] = useState(0);
+  const [studentCount, setStudentCount] = useState(0);
 
-  const nomeUsuario = perfil?.full_name?.trim() || "Usuária";
+  const nomeUsuario =
+    perfil?.full_name?.trim() ||
+    (typeof user?.user_metadata.full_name === "string" ? user.user_metadata.full_name.trim() : "") ||
+    "Usuária";
+
+  useEffect(() => {
+    if (!workspace?.id) {
+      return;
+    }
+
+    let active = true;
+
+    void (async () => {
+      try {
+        const [classesCount, studentsCount] = await Promise.all([
+          getActiveClassCount(workspace.id),
+          getStudentCount(workspace.id),
+        ]);
+
+        if (!active) {
+          return;
+        }
+
+        setActiveClassesCount(classesCount);
+        setStudentCount(studentsCount);
+      } catch {
+        if (!active) {
+          return;
+        }
+
+        setActiveClassesCount(0);
+        setStudentCount(0);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [workspace?.id]);
+
+  const turmasUsageClassName =
+    activeClassesCount >= 1 ? "text-rose-600" : activeClassesCount >= 0.8 ? "text-orange-500" : "text-slate-500";
+  const alunasUsageClassName =
+    studentCount >= 20 ? "text-rose-600" : studentCount >= 16 ? "text-orange-500" : "text-slate-500";
+
+  function renderUsageIndicators() {
+    return (
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+        <span className={cn("font-medium", turmasUsageClassName)}>{activeClassesCount}/1 turma</span>
+        {studentCount > 15 ? <span className={cn("font-medium", alunasUsageClassName)}>{studentCount}/20 alunas</span> : null}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -29,9 +86,10 @@ export function AppLayout() {
           )}
         >
           <div className="flex items-center justify-between">
-            <Link to="/dashboard" className="space-y-1">
+            <Link to="/dashboard" className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-600">Genda Class</p>
               <p className="text-lg font-semibold text-slate-900">Painel da escola</p>
+              {renderUsageIndicators()}
             </Link>
             <button
               type="button"
@@ -91,6 +149,7 @@ export function AppLayout() {
                 <div>
                   <p className="text-sm text-slate-500">Bem-vinda de volta</p>
                   <h1 className="text-base font-semibold text-slate-900">{nomeUsuario}</h1>
+                  <div className="mt-1 lg:hidden">{renderUsageIndicators()}</div>
                 </div>
               </div>
 

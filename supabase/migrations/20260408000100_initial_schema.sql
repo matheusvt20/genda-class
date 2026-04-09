@@ -23,6 +23,10 @@ create policy "Usuária vê seu próprio perfil"
   on public.profiles for select
   using (auth.uid() = id);
 
+create policy "Usuária cria seu próprio perfil"
+  on public.profiles for insert
+  with check (auth.uid() = id);
+
 create policy "Usuária atualiza seu próprio perfil"
   on public.profiles for update
   using (auth.uid() = id);
@@ -40,6 +44,10 @@ alter table public.workspaces enable row level security;
 create policy "Usuária vê seu workspace"
   on public.workspaces for select
   using (owner_user_id = auth.uid());
+
+create policy "Usuária cria seu workspace"
+  on public.workspaces for insert
+  with check (owner_user_id = auth.uid());
 
 create policy "Usuária atualiza seu workspace"
   on public.workspaces for update
@@ -262,6 +270,8 @@ create trigger set_workspace_settings_updated_at
 
 create or replace function public.handle_new_user()
 returns trigger as $$
+declare
+  workspace_id uuid;
 begin
   insert into public.profiles (id, full_name)
   values (new.id, new.raw_user_meta_data->>'full_name');
@@ -270,11 +280,15 @@ begin
   values (
     coalesce(new.raw_user_meta_data->>'full_name', 'Meu Negócio'),
     new.id
-  );
+  )
+  returning id into workspace_id;
+
+  insert into public.workspace_settings (workspace_id)
+  values (workspace_id);
 
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public, auth;
 
 drop trigger if exists on_auth_user_created on auth.users;
 

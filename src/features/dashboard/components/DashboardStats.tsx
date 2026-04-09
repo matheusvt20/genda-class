@@ -1,13 +1,21 @@
 import { Card } from "@/components/ui/Card";
+import { formatarMoeda } from "@/lib/currency";
 
-const cards = [
-  { titulo: "Turmas do mês", valor: "0", detalhe: "Em breve" },
-  { titulo: "Alunas confirmadas", valor: "0", detalhe: "Em breve" },
-  { titulo: "Recebido", valor: "R$ 0,00", detalhe: "Em breve" },
-  { titulo: "Lucro estimado", valor: "R$ 0,00", detalhe: "Em breve" },
-];
+type Props = {
+  turmasDoMes: number;
+  alunasConfirmadas: number;
+  recebido: number;
+  lucroEstimado: number;
+};
 
-export function DashboardStats() {
+export function DashboardStats({ turmasDoMes, alunasConfirmadas, recebido, lucroEstimado }: Props) {
+  const cards = [
+    { titulo: "Turmas do mês", valor: String(turmasDoMes), detalhe: "Acompanhe a agenda ativa deste mês." },
+    { titulo: "Alunas confirmadas", valor: String(alunasConfirmadas), detalhe: "Inscrições confirmadas no período." },
+    { titulo: "Recebido", valor: formatarMoeda(recebido), detalhe: "Somatório de pagamentos pagos no mês." },
+    { titulo: "Lucro estimado", valor: formatarMoeda(lucroEstimado), detalhe: "Recebido menos custos realizados." },
+  ];
+
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => (
